@@ -35,11 +35,3 @@ if __name__ == "__main__":
     data = load_all_seasons()
     print(f"Total matches: {data.shape[0]}")
     print(data['League'].value_counts())
-
-    # add temporarily to bottom of data_prep.py's __main__ block, or run standalone
-if __name__ == "__main__":
-    data = load_all_seasons()
-    for league in data['League'].unique():
-        teams = sorted(set(data[data['League']==league]['HomeTeam']))
-        print(f"\n{league} ({len(teams)} teams):")
-        print(teams)
