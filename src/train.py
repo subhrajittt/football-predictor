@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from build_dataset import build_final_dataset
 from predict import FEATURE_COLS
@@ -37,6 +38,17 @@ def train_model(X_train, y_train, balanced=False):
     model.fit(X_train_scaled, y_train)
 
     return model, scaler
+
+
+def train_calibrated_model(X_train, y_train):
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+
+    base_model = LogisticRegression(max_iter=1000)
+    calibrated = CalibratedClassifierCV(base_model, method='sigmoid', cv=5)
+    calibrated.fit(X_train_scaled, y_train)
+
+    return calibrated, scaler
 
 
 def evaluate(model, scaler, X_test, y_test, label=""):

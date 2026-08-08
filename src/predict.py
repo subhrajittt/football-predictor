@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import StandardScaler
 from build_dataset import build_final_dataset
 
@@ -22,7 +23,8 @@ def train_full_model(data, league=None):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    model = LogisticRegression(max_iter=1000)
+    base_model = LogisticRegression(max_iter=1000)
+    model = CalibratedClassifierCV(base_model, method='sigmoid', cv=5)
     model.fit(X_scaled, y)
 
     return model, scaler
