@@ -12,7 +12,10 @@ FEATURE_COLS = [
 ]
 
 
-def train_full_model(data):
+def train_full_model(data, league=None):
+    if league:
+        data = data[data['League'] == league]
+
     X = data[FEATURE_COLS]
     y = data['FTR']
 
@@ -25,9 +28,10 @@ def train_full_model(data):
     return model, scaler
 
 
-def get_latest_team_stats(data, team):
-    home_rows = data[data['HomeTeam'] == team].sort_values('Date')
-    away_rows = data[data['AwayTeam'] == team].sort_values('Date')
+def get_latest_team_stats(data, team, league):
+    league_data = data[data['League'] == league]
+    home_rows = league_data[league_data['HomeTeam'] == team].sort_values('Date')
+    away_rows = league_data[league_data['AwayTeam'] == team].sort_values('Date')
 
     if len(home_rows) == 0 or len(away_rows) == 0:
         return None
@@ -48,10 +52,11 @@ def get_latest_team_stats(data, team):
     }
 
 
-def get_h2h_winrate(data, home_team, away_team):
-    pair_matches = data[
-        ((data['HomeTeam'] == home_team) & (data['AwayTeam'] == away_team)) |
-        ((data['HomeTeam'] == away_team) & (data['AwayTeam'] == home_team))
+def get_h2h_winrate(data, home_team, away_team, league):
+    league_data = data[data['League'] == league]
+    pair_matches = league_data[
+        ((league_data['HomeTeam'] == home_team) & (league_data['AwayTeam'] == away_team)) |
+        ((league_data['HomeTeam'] == away_team) & (league_data['AwayTeam'] == home_team))
     ]
     if len(pair_matches) == 0:
         return 0.5
@@ -61,15 +66,15 @@ def get_h2h_winrate(data, home_team, away_team):
     return wins / len(pair_matches)
 
 
-def predict_match(model, scaler, data, home_team, away_team):
-    home_stats = get_latest_team_stats(data, home_team)
-    away_stats = get_latest_team_stats(data, away_team)
+def predict_match(model, scaler, data, home_team, away_team, league):
+    home_stats = get_latest_team_stats(data, home_team, league)
+    away_stats = get_latest_team_stats(data, away_team, league)
 
     if home_stats is None or away_stats is None:
         print(f"No data found for one of: {home_team}, {away_team}")
         return None
 
-    h2h = get_h2h_winrate(data, home_team, away_team)
+    h2h = get_h2h_winrate(data, home_team, away_team, league)
 
     row = pd.DataFrame([{
         'Home_Form_Points': home_stats['form_points'],
@@ -91,14 +96,20 @@ def predict_match(model, scaler, data, home_team, away_team):
 
 if __name__ == "__main__":
     data, ratings = build_final_dataset()
-    model, scaler = train_full_model(data)
 
-    matchups = [('Arsenal', 'Chelsea'), ('Man City', 'Liverpool'), ('Burnley', 'Man United')]
+    tests = [
+        ('Premier League', 'Arsenal', 'Chelsea'),
+        ('La Liga', 'Real Madrid', 'Barcelona'),
+        ('Serie A', 'Inter', 'Juventus'),
+        ('Bundesliga', 'Bayern Munich', 'Dortmund'),
+        ('Ligue 1', 'Paris SG', 'Marseille'),
+    ]
 
-    for home, away in matchups:
-        result = predict_match(model, scaler, data, home, away)
+    for league, home, away in tests:
+        model, scaler = train_full_model(data, league=league)
+        result = predict_match(model, scaler, data, home, away, league)
         if result:
-            print(f"\n{home} vs {away}")
+            print(f"\n[{league}] {home} vs {away}")
             for outcome, prob in sorted(result.items(), key=lambda x: -x[1]):
                 label = {'H': f'{home} win', 'A': f'{away} win', 'D': 'Draw'}[outcome]
                 print(f"  {label}: {prob:.1%}")

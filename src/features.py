@@ -2,13 +2,13 @@ import pandas as pd
 from data_prep import load_all_seasons
 
 def build_team_match_log(data):
-    home = data[['Date', 'HomeTeam', 'FTHG', 'FTAG', 'FTR']].copy()
-    home.columns = ['Date', 'Team', 'GoalsFor', 'GoalsAgainst', 'Result']
+    home = data[['Date', 'HomeTeam', 'FTHG', 'FTAG', 'FTR', 'League']].copy()
+    home.columns = ['Date', 'Team', 'GoalsFor', 'GoalsAgainst', 'Result', 'League']
     home['Points'] = home['Result'].map({'H': 3, 'D': 1, 'A': 0})
     home['Venue'] = 'Home'
 
-    away = data[['Date', 'AwayTeam', 'FTAG', 'FTHG', 'FTR']].copy()
-    away.columns = ['Date', 'Team', 'GoalsFor', 'GoalsAgainst', 'Result']
+    away = data[['Date', 'AwayTeam', 'FTAG', 'FTHG', 'FTR', 'League']].copy()
+    away.columns = ['Date', 'Team', 'GoalsFor', 'GoalsAgainst', 'Result', 'League']
     away['Points'] = away['Result'].map({'H': 0, 'D': 1, 'A': 3})
     away['Venue'] = 'Away'
 
@@ -19,7 +19,6 @@ def build_team_match_log(data):
 def add_rolling_form(team_log, window=5):
     team_log = team_log.sort_values(['Team', 'Date'])
 
-    # shift(1) so current match doesn't leak into its own form
     for col, out in [('Points', 'Form_Points'), ('GoalsFor', 'Form_GoalsFor'), ('GoalsAgainst', 'Form_GoalsAgainst')]:
         team_log[out] = team_log.groupby('Team')[col].transform(
             lambda x: x.shift(1).rolling(window, min_periods=1).mean()
@@ -48,4 +47,4 @@ if __name__ == "__main__":
     team_log = build_team_match_log(data)
     team_log = add_rolling_form(team_log)
     final = merge_form_into_matches(data, team_log)
-    print(final[['Date', 'HomeTeam', 'AwayTeam', 'Home_Form_Points', 'Away_Form_Points']].head())
+    print(final[['Date', 'League', 'HomeTeam', 'AwayTeam', 'Home_Form_Points', 'Away_Form_Points']].head())

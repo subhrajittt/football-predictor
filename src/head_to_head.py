@@ -3,7 +3,7 @@ from data_prep import load_all_seasons
 
 def add_head_to_head(data):
     data = data.sort_values('Date').reset_index(drop=True)
-    history = {}  # frozenset({team1, team2}) -> list of past winners (None = draw)
+    history = {}
 
     winrates, meetings = [], []
 
@@ -37,4 +37,4 @@ def add_head_to_head(data):
 if __name__ == "__main__":
     data = load_all_seasons()
     data = add_head_to_head(data)
-    print(data[['Date', 'HomeTeam', 'AwayTeam', 'H2H_HomeWinRate', 'H2H_Meetings']].tail(10))
+    print(data[['Date', 'League', 'HomeTeam', 'AwayTeam', 'H2H_HomeWinRate', 'H2H_Meetings']].tail(10))

@@ -22,7 +22,6 @@ def build_final_dataset():
     for col in form_cols:
         data[col] = data[col].fillna(data[col].mean())
 
-    # no prior meetings -> assume 50/50, neutral
     data['H2H_HomeWinRate'] = data['H2H_HomeWinRate'].fillna(0.5)
 
     return data, ratings
@@ -31,4 +30,5 @@ def build_final_dataset():
 if __name__ == "__main__":
     final_data, ratings = build_final_dataset()
     print(f"Final dataset: {final_data.shape}")
+    print(final_data['League'].value_counts())
     final_data.to_csv("data/processed/final_dataset.csv", index=False)

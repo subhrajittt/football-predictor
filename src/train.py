@@ -6,9 +6,13 @@ from build_dataset import build_final_dataset
 from predict import FEATURE_COLS
 
 
-def prepare_train_test(data, test_seasons=['PL_2024-25', 'PL_2025-26']):
-    target_col = 'FTR'
+def prepare_train_test(data, league, test_seasons=None):
+    data = data[data['League'] == league]
 
+    if test_seasons is None:
+        test_seasons = [s for s in data['Season'].unique() if '2024-25' in s or '2025-26' in s]
+
+    target_col = 'FTR'
     train = data[~data['Season'].isin(test_seasons)]
     test = data[data['Season'].isin(test_seasons)]
 
@@ -43,22 +47,15 @@ def evaluate(model, scaler, X_test, y_test, label=""):
     print(f"\n=== {label} ===")
     print(f"Accuracy: {acc:.3f}")
     print(classification_report(y_test, preds, zero_division=0))
-    print(model.classes_)
-    print(confusion_matrix(y_test, preds, labels=model.classes_))
     return acc
 
 
 if __name__ == "__main__":
     data, ratings = build_final_dataset()
-    X_train, X_test, y_train, y_test = prepare_train_test(data)
 
-    print(f"Train set: {X_train.shape[0]} matches")
-    print(f"Test set: {X_test.shape[0]} matches")
-
-    naive_acc, most_common = naive_baseline_accuracy(y_test)
-    print(f"Naive baseline (always predict '{most_common}'): {naive_acc:.3f}")
-
-    model, scaler = train_model(X_train, y_train)
-    acc = evaluate(model, scaler, X_test, y_test, label="Logistic Regression")
-
-    print(f"\nBeats naive baseline: {acc > naive_acc}")
+    for league in data['League'].unique():
+        X_train, X_test, y_train, y_test = prepare_train_test(data, league)
+        naive_acc, most_common = naive_baseline_accuracy(y_test)
+        model, scaler = train_model(X_train, y_train)
+        acc = evaluate(model, scaler, X_test, y_test, label=league)
+        print(f"Naive baseline: {naive_acc:.3f} | Beats it: {acc > naive_acc}")
