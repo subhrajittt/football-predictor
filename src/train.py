@@ -3,23 +3,19 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from build_dataset import build_final_dataset
+from predict import FEATURE_COLS
 
 
 def prepare_train_test(data, test_seasons=['PL_2024-25', 'PL_2025-26']):
-    feature_cols = [
-        'Home_Form_Points', 'Home_Form_GoalsFor', 'Home_Form_GoalsAgainst',
-        'Away_Form_Points', 'Away_Form_GoalsFor', 'Away_Form_GoalsAgainst',
-        'Home_Elo', 'Away_Elo'
-    ]
     target_col = 'FTR'
 
     train = data[~data['Season'].isin(test_seasons)]
     test = data[data['Season'].isin(test_seasons)]
 
-    X_train, y_train = train[feature_cols], train[target_col]
-    X_test, y_test = test[feature_cols], test[target_col]
+    X_train, y_train = train[FEATURE_COLS], train[target_col]
+    X_test, y_test = test[FEATURE_COLS], test[target_col]
 
-    return X_train, X_test, y_train, y_test, feature_cols
+    return X_train, X_test, y_train, y_test
 
 
 def naive_baseline_accuracy(y_test):
@@ -54,7 +50,7 @@ def evaluate(model, scaler, X_test, y_test, label=""):
 
 if __name__ == "__main__":
     data, ratings = build_final_dataset()
-    X_train, X_test, y_train, y_test, feature_cols = prepare_train_test(data)
+    X_train, X_test, y_train, y_test = prepare_train_test(data)
 
     print(f"Train set: {X_train.shape[0]} matches")
     print(f"Test set: {X_test.shape[0]} matches")
@@ -64,10 +60,5 @@ if __name__ == "__main__":
 
     model, scaler = train_model(X_train, y_train)
     acc = evaluate(model, scaler, X_test, y_test, label="Logistic Regression")
-
-    # tried class_weight='balanced' to force draw predictions - accuracy dropped
-    # to 0.467, draw recall only hit 0.11. not worth the tradeoff, keeping standard.
-    model_bal, scaler_bal = train_model(X_train, y_train, balanced=True)
-    acc_bal = evaluate(model_bal, scaler_bal, X_test, y_test, label="Balanced (comparison only)")
 
     print(f"\nBeats naive baseline: {acc > naive_acc}")

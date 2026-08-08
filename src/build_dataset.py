@@ -2,6 +2,7 @@ import pandas as pd
 from data_prep import load_all_seasons
 from features import build_team_match_log, add_rolling_form, merge_form_into_matches
 from elo import calculate_elo
+from head_to_head import add_head_to_head
 
 
 def build_final_dataset():
@@ -12,14 +13,17 @@ def build_final_dataset():
     data = merge_form_into_matches(data, team_log)
 
     data, ratings = calculate_elo(data)
+    data = add_head_to_head(data)
 
-    # early-season matches have no prior form -> fill with league average
     form_cols = [
         'Home_Form_Points', 'Home_Form_GoalsFor', 'Home_Form_GoalsAgainst',
         'Away_Form_Points', 'Away_Form_GoalsFor', 'Away_Form_GoalsAgainst'
     ]
     for col in form_cols:
         data[col] = data[col].fillna(data[col].mean())
+
+    # no prior meetings -> assume 50/50, neutral
+    data['H2H_HomeWinRate'] = data['H2H_HomeWinRate'].fillna(0.5)
 
     return data, ratings
 
