@@ -50,9 +50,19 @@ The fix was wrapping the model in scikit-learn's `CalibratedClassifierCV`, which
 
 ## Data Source Validation
 
-To check whether the pipeline could work with live data instead of manually downloaded CSVs, I integrated the API-Football API and pulled the 2023-24 Premier League season through it, then compared every match against the same season in the CSV data.
+To check whether the pipeline could work with live data instead of manually downloaded CSVs, I integrated the API-Football API and pulled the 2023-24 season through it for all five leagues, then compared every match against the same seasons in the CSV data.
 
-The result was 380 out of 380 matches matched exactly, with zero result discrepancies, after fixing one team-naming inconsistency (the API uses "Sheffield Utd," the CSV source uses "Sheffield United").
+The first pass showed uneven match rates. Premier League and Serie A matched fully, but La Liga, Bundesliga, and Ligue 1 came back with significant gaps. Digging into the unmatched rows, most turned out to be team-naming differences between the two sources (for example, the API returns "Atletico Madrid," the CSV source uses "Ath Madrid"), which I fixed with a name mapping. After that, Bundesliga still had a large gap, and the cause turned out to be different: the API's fixture list for that league included teams that don't actually belong to the top flight in that season, most likely relegated or promoted teams from an adjacent division, such as Fortuna Dusseldorf appearing in Bundesliga results.
+
+The fix was filtering API results down to only the teams already known to exist in that league from the CSV data. After both fixes, all five leagues matched 100% between the two sources, with zero result discrepancies:
+
+| League | Matched |
+|---|---|
+| Premier League | 380 / 380 |
+| La Liga | 342 / 342 |
+| Serie A | 380 / 380 |
+| Bundesliga | 210 / 210 |
+| Ligue 1 | 272 / 272 |
 
 The free tier of API-Football only covers the 2022-2024 seasons. Current-season data requires a paid plan ($19+/month), which I decided wasn't worth paying for on a learning project. The integration code (`api_client.py`) works and is ready to use with a different tier. Swapping the API key is the only change needed to pull live data.
 
